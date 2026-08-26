@@ -8,6 +8,7 @@ interface EnvironmentConfig {
     clientId: string;
     issuer: string;
     redirectUri: string;
+    postLogoutRedirectUri: string;
     redirectSuffix?: string; // Optional suffix for redirect URI if needed
   };
   api: {
@@ -23,6 +24,7 @@ const getEnvironmentConfig = (): EnvironmentConfig => {
   const oktaClientId = import.meta.env.VITE_OKTA_CLIENT_ID;
   const oktaIssuer = import.meta.env.VITE_OKTA_ISSUER;
   const oktaRedirectUri = import.meta.env.VITE_OKTA_REDIRECT_URI;
+  const oktaPostLogoutRedirectUri = import.meta.env.VITE_OKTA_POST_LOGOUT_REDIRECT_URI;
   const oktaRedirectSuffix = import.meta.env.VITE_OKTA_REDIRECT_SUFFIX;
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const environment = (import.meta.env.VITE_ENVIRONMENT || 'local') as EnvironmentConfig['environment'];
@@ -43,11 +45,16 @@ const getEnvironmentConfig = (): EnvironmentConfig => {
     ? baseRedirectUri
     : `${baseRedirectUri}${redirectSuffix.startsWith('/') ? redirectSuffix : `/${redirectSuffix}`}`;
 
+  const fallbackPostLogoutRedirectUri = fullRedirectUri.endsWith(redirectSuffix)
+    ? fullRedirectUri.slice(0, fullRedirectUri.length - redirectSuffix.length) || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')
+    : fullRedirectUri;
+
   const config: EnvironmentConfig = {
     okta: {
       clientId: oktaClientId || '',
       issuer: oktaIssuer || 'https://emerson.okta.com/',
       redirectUri: fullRedirectUri,
+      postLogoutRedirectUri: oktaPostLogoutRedirectUri || fallbackPostLogoutRedirectUri,
       redirectSuffix: redirectSuffix,
     },
     api: {

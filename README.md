@@ -2,6 +2,19 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Build for UAT / staging
+
+1. Copy the environment template for the target environment:
+   - `copy .env.example .env.staging` for staging
+   - `copy .env.example .env.uat` for UAT
+2. Update the values in the copied file with the correct Okta, API, and redirect URLs.
+3. Build the app:
+   - `npm run build:staging`
+   - `npm run build:uat`
+4. Deploy the contents of the `dist` folder to your stage or UAT web server.
+
+If the app is hosted under a subpath, set `VITE_BASE_PATH` in the environment file (for example `/rsppl/`).
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

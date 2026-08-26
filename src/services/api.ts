@@ -36,6 +36,11 @@ export const generateRSPPL = async (
   // Use the backend URL from config
   const url = `${CONFIG.API_BASE_URL}/sales/rsppl/?${params.toString()}`;
 
-  const response = await axios.get(url, { responseType: "blob" });
+  const headers: Record<string, string> = {};
+  if (CONFIG.API_KEY) {
+    headers["x-api-key"] = CONFIG.API_KEY;
+  }
+
+  const response = await axios.get(url, { responseType: "blob", headers });
   return response.data;
 };

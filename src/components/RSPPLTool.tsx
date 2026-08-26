@@ -28,6 +28,7 @@ import logo from "../assets/logo.png";
 import { generateRSPPL } from "../services/api";
 import type { OutputType } from "../services/api";
 import { oktaAuth } from "../oktaConfig";
+import { oktaConfig } from "../config/environment";
 import { clearTokens, setAccessToken, setIdToken, setUserClaims } from "../services/tokenManager";
 
 const RSPPLTool: React.FC = () => {
@@ -56,6 +57,15 @@ const RSPPLTool: React.FC = () => {
   useEffect(() => {
     const syncAuthState = async () => {
       try {
+        const appBasePath = import.meta.env.VITE_BASE_PATH || "/";
+        const isCallbackRoute =
+          window.location.pathname === "/signin/callback" ||
+          window.location.pathname.endsWith("/signin/callback");
+        const isLogoutRoute =
+          window.location.pathname === "/" &&
+          window.location.search.includes("state=") &&
+          window.location.search.includes("iss=");
+
         await oktaAuth.handleLoginRedirect();
         const state = oktaAuth.authStateManager.getAuthState();
         const claims = state?.idToken?.claims ?? state?.accessToken?.claims;
@@ -81,6 +91,12 @@ const RSPPLTool: React.FC = () => {
           setIdToken(state.idToken?.idToken ?? null);
           setUserClaims(claims as Record<string, unknown> | null);
           setIsAuthenticated(true);
+
+          if (isCallbackRoute) {
+            window.history.replaceState({}, document.title, appBasePath);
+          }
+        } else if (!isCallbackRoute && !isLogoutRoute) {
+          await oktaAuth.signInWithRedirect();
         } else {
           clearTokens();
           setUser({ name: "User", email: "" });
@@ -112,7 +128,7 @@ const RSPPLTool: React.FC = () => {
       clearTokens();
       setUser({ name: "User", email: "" });
       setIsAuthenticated(false);
-      await oktaAuth.signOut({ postLogoutRedirectUri: window.location.origin });
+      await oktaAuth.signOut({ postLogoutRedirectUri: oktaConfig.postLogoutRedirectUri });
     } catch (error) {
       console.error("Failed to sign out from Okta", error);
     }
@@ -170,6 +186,50 @@ const RSPPLTool: React.FC = () => {
     }
 
   };
+
+  if (authLoading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f4f6f8"
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress />
+          <Typography sx={{ mt: 2, color: "#2b547e" }}>
+            Checking sign-in status...
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#f4f6f8"
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <Typography sx={{ mb: 2, fontWeight: 600 }}>
+            Redirecting to Okta sign-in...
+          </Typography>
+          <Button variant="contained" onClick={handleLogin}>
+            Sign In
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
 
@@ -587,7 +647,7 @@ const RSPPLTool: React.FC = () => {
                   disabled={loading}
                 >
 
-                  Generate {outputType}
+                  Submit
 
                 </Button>
 
